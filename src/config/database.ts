@@ -1,12 +1,22 @@
 import mongoose from 'mongoose';
-import config from './config';
+import { getConfig } from './config';
 
 export async function connectDatabase(): Promise<void> {
-  if (config.mongoUrl.includes('<db_password>')) {
-    throw new Error('Replace <db_password> in MONGO_URL with your real MongoDB password.');
+  const { mongoUrl } = getConfig();
+
+  if (!mongoUrl) {
+    throw new Error(
+      'Missing MONGO_URL. Local uses .env; production should load it from AWS Secrets Manager.',
+    );
   }
 
-  await mongoose.connect(config.mongoUrl, {
+  if (mongoUrl.includes('<db_password>')) {
+    throw new Error(
+      'Replace <db_password> in MONGO_URL with your real MongoDB password.',
+    );
+  }
+
+  await mongoose.connect(mongoUrl, {
     serverSelectionTimeoutMS: 10000,
   });
   console.log('MongoDB connected');

@@ -1,9 +1,18 @@
 import app from './app';
-import config from './config/config';
+import { getConfig } from './config/config';
 import { connectDatabase } from './config/database';
+import { loadProductionSecrets } from './config/secrets';
 
 function getStartupErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
+
+  if (message.includes('AWS_SECRET_NAME') || message.includes('AWS_REGION')) {
+    return [
+      'Failed to start server because production secrets are not configured.',
+      'For production, set NODE_ENV=production, AWS_REGION, and AWS_SECRET_NAME on the server.',
+      `Original error: ${message}`,
+    ].join('\n');
+  }
 
   if (
     message.includes('Could not connect to any servers') ||
@@ -23,13 +32,18 @@ function getStartupErrorMessage(error: unknown): string {
   return `Failed to connect to MongoDB.\nOriginal error: ${message}`;
 }
 
-connectDatabase()
-  .then(() => {
-    app.listen(config.port, () => {
-      console.log(`Server running on port ${config.port}`);
-    });
-  })
-  .catch((error) => {
-    console.error(getStartupErrorMessage(error));
-    process.exit(1);
+async function startServer(): Promise<void> {
+  await loadProductionSecrets();
+  await connectDatabase();
+
+  const config = getConfig();
+
+  app.listen(config.port, () => {
+    console.log(`Server running on port ${config.port}`);
   });
+}
+
+startServer().catch((error) => {
+  console.error(getStartupErrorMessage(error));
+  process.exit(1);
+});
