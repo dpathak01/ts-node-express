@@ -1,6 +1,20 @@
-export interface Item {
-  id: number;
+import { Schema, model, Document } from 'mongoose';
+
+export interface Item extends Document {
   name: string;
 }
 
-export let items: Item[] = [];
+const itemSchema = new Schema<Item>(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
+
+export default model<Item>('Item', itemSchema);

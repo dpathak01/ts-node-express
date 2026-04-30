@@ -1,71 +1,106 @@
 import { Request, Response, NextFunction } from 'express';
-import { items, Item } from '../models/item';
+import { isValidObjectId } from 'mongoose';
+import ItemModel from '../models/item';
 
 // Create an item
-export const createItem = (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { name } = req.body;
-        const newItem: Item = { id: Date.now(), name };
-        items.push(newItem);
-        res.status(201).json(newItem);
-    } catch (error) {
-        next(error);
-    }
+export const createItem = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { name } = req.body;
+    const newItem = await ItemModel.create({ name });
+    res.status(201).json(newItem);
+  } catch (error) {
+    next(error);
+  }
 };
 
 // Read all items
-export const getItems = (req: Request, res: Response, next: NextFunction) => {
-    try {
-        res.json(items);
-    } catch (error) {
-        next(error);
-    }
+export const getItems = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const items = await ItemModel.find();
+    res.json(items);
+  } catch (error) {
+    next(error);
+  }
 };
 
 // Read single item
-export const getItemById = (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const id = parseInt(req.params.id, 10);
-        const item = items.find((i) => i.id === id);
-        if (!item) {
-            res.status(404).json({ message: 'Item not found' });
-            return;
-        }
-        res.json(item);
-    } catch (error) {
-        next(error);
+export const getItemById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!isValidObjectId(req.params.id)) {
+      res.status(400).json({ message: 'Invalid item id' });
+      return;
     }
+
+    const item = await ItemModel.findById(req.params.id);
+    if (!item) {
+      res.status(404).json({ message: 'Item not found' });
+      return;
+    }
+    res.json(item);
+  } catch (error) {
+    next(error);
+  }
 };
 
 // Update an item
-export const updateItem = (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const id = parseInt(req.params.id, 10);
-        const { name } = req.body;
-        const itemIndex = items.findIndex((i) => i.id === id);
-        if (itemIndex === -1) {
-            res.status(404).json({ message: 'Item not found' });
-            return;
-        }
-        items[itemIndex].name = name;
-        res.json(items[itemIndex]);
-    } catch (error) {
-        next(error);
+export const updateItem = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!isValidObjectId(req.params.id)) {
+      res.status(400).json({ message: 'Invalid item id' });
+      return;
     }
+
+    const { name } = req.body;
+    const item = await ItemModel.findByIdAndUpdate(
+      req.params.id,
+      { name },
+      { new: true, runValidators: true },
+    );
+    if (!item) {
+      res.status(404).json({ message: 'Item not found' });
+      return;
+    }
+    res.json(item);
+  } catch (error) {
+    next(error);
+  }
 };
 
 // Delete an item
-export const deleteItem = (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const id = parseInt(req.params.id, 10);
-        const itemIndex = items.findIndex((i) => i.id === id);
-        if (itemIndex === -1) {
-            res.status(404).json({ message: 'Item not found' });
-            return;
-        }
-        const deletedItem = items.splice(itemIndex, 1)[0];
-        res.json(deletedItem);
-    } catch (error) {
-        next(error);
+export const deleteItem = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!isValidObjectId(req.params.id)) {
+      res.status(400).json({ message: 'Invalid item id' });
+      return;
     }
+
+    const deletedItem = await ItemModel.findByIdAndDelete(req.params.id);
+    if (!deletedItem) {
+      res.status(404).json({ message: 'Item not found' });
+      return;
+    }
+    res.json(deletedItem);
+  } catch (error) {
+    next(error);
+  }
 };

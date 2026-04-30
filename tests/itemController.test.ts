@@ -1,22 +1,27 @@
 import { Request, Response } from 'express';
 import { getItems } from '../src/controllers/itemController';
-import { items } from '../src/models/item';
+import ItemModel from '../src/models/item';
+
+jest.mock('../src/models/item', () => ({
+  __esModule: true,
+  default: {
+    find: jest.fn(),
+  },
+}));
 
 describe('Item Controller', () => {
-    it('should return an empty array when no items exist', () => {
-        // Create mock objects for Request, Response, and NextFunction
-        const req = {} as Request;
-        const res = {
-            json: jest.fn(),
-        } as unknown as Response;
+  it('should return an empty array when no items exist', async () => {
+    const req = {} as Request;
+    const res = {
+      json: jest.fn(),
+    } as unknown as Response;
+    const next = jest.fn();
 
-        // Ensure that our in-memory store is empty
-        items.length = 0;
+    (ItemModel.find as jest.Mock).mockResolvedValue([]);
 
-        // Execute our controller function
-        getItems(req, res, jest.fn());
+    await getItems(req, res, next);
 
-        // Expect that res.json was called with an empty array
-        expect(res.json).toHaveBeenCalledWith([]);
-    });
+    expect(res.json).toHaveBeenCalledWith([]);
+    expect(next).not.toHaveBeenCalled();
+  });
 });
