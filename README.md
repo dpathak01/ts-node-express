@@ -2,7 +2,6 @@
 
 Typescript Node.js Express application with MongoDB CRUD support.
 
-Reference: https://blog.logrocket.com/express-typescript-node/
 
 ## Project Setup
 
